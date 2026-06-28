@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e0c"/>
+      <stop offset="100%" style="stop-color:#1a2e22"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="neon">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="800" height="400" fill="url(#bg)"/>
+  <rect x="0" y="0" width="800" height="400" fill="url(#glow)" opacity="0.1"/>
+
+  <!-- Menu panel -->
+  <rect x="250" y="40" width="300" height="320" rx="16" fill="rgba(8,12,10,0.94)" stroke="#00ff88" stroke-width="1.5" stroke-opacity="0.35"/>
+
+  <!-- Title -->
+  <text x="400" y="72" font-family="Consolas, monospace" font-size="16" font-weight="bold" fill="#00ff88" text-anchor="middle" filter="url(#neon)">⚡ SKAPPA v15.3</text>
+  <line x1="270" y1="85" x2="530" y2="85" stroke="#00ff88" stroke-width="0.5" stroke-opacity="0.1"/>
+
+  <!-- Section: Autopilot -->
+  <text x="270" y="105" font-family="Consolas, monospace" font-size="10" fill="#00ff88" fill-opacity="0.5" font-weight="bold">AUTOPILOT</text>
+  <rect x="270" y="112" width="130" height="28" rx="8" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-opacity="0.4" stroke-width="1.5"/>
+  <text x="335" y="131" font-family="Consolas, monospace" font-size="11" fill="#00ff88" text-anchor="middle">▶ PILOT</text>
+  <rect x="408" y="112" width="95" height="28" rx="8" fill="rgba(0,255,136,0.04)" stroke="#00ff88" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="455" y="131" font-family="Consolas, monospace" font-size="10" fill="#fff" text-anchor="middle" opacity="0.5">3m43,50</text>
+
+  <!-- Section: Memory -->
+  <text x="270" y="162" font-family="Consolas, monospace" font-size="10" fill="#00ff88" fill-opacity="0.5" font-weight="bold">MEMORY</text>
+  <rect x="270" y="168" width="120" height="26" rx="8" fill="rgba(255,170,0,0.03)" stroke="#ffaa00" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="330" y="185" font-family="Consolas, monospace" font-size="10" fill="#ffaa00" text-anchor="middle">🧠 LEARN</text>
+  <rect x="398" y="168" width="120" height="26" rx="8" fill="rgba(255,170,0,0.03)" stroke="#ffaa00" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="458" y="185" font-family="Consolas, monospace" font-size="10" fill="#ffaa00" text-anchor="middle">🎯 REVIEW</text>
+
+  <!-- Section: Quick Fill -->
+  <text x="270" y="215" font-family="Consolas, monospace" font-size="10" fill="#00ff88" fill-opacity="0.5" font-weight="bold">QUICK FILL</text>
+  <rect x="270" y="221" width="52" height="24" rx="8" fill="rgba(0,255,136,0.04)" stroke="#00ff88" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="296" y="237" font-family="Consolas, monospace" font-size="10" fill="#00ff88" text-anchor="middle">A</text>
+  <rect x="328" y="221" width="52" height="24" rx="8" fill="rgba(0,255,136,0.04)" stroke="#00ff88" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="354" y="237" font-family="Consolas, monospace" font-size="10" fill="#00ff88" text-anchor="middle">B</text>
+  <rect x="386" y="221" width="52" height="24" rx="8" fill="rgba(0,255,136,0.04)" stroke="#00ff88" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="412" y="237" font-family="Consolas, monospace" font-size="10" fill="#00ff88" text-anchor="middle">C</text>
+  <rect x="444" y="221" width="52" height="24" rx="8" fill="rgba(0,255,136,0.04)" stroke="#00ff88" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="470" y="237" font-family="Consolas, monospace" font-size="10" fill="#00ff88" text-anchor="middle">D</text>
+
+  <rect x="270" y="250" width="120" height="26" rx="8" fill="rgba(0,204,255,0.03)" stroke="#00ccff" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="330" y="267" font-family="Consolas, monospace" font-size="10" fill="#44ddff" text-anchor="middle">🎲 RANDOM</text>
+  <rect x="398" y="250" width="120" height="26" rx="8" fill="rgba(255,68,68,0.03)" stroke="#ff5555" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="458" y="267" font-family="Consolas, monospace" font-size="10" fill="#ff5555" text-anchor="middle">🚀 SUBMIT</text>
+
+  <!-- Status bar -->
+  <line x1="270" y1="295" x2="530" y2="295" stroke="#00ff88" stroke-width="0.5" stroke-opacity="0.07"/>
+  <text x="400" y="310" font-family="Consolas, monospace" font-size="9" fill="#00ff88" fill-opacity="0.5" text-anchor="middle">■ Hidden · ` show</text>
+
+  <!-- Decorative elements -->
+  <circle cx="100" cy="350" r="2" fill="#00ff88" opacity="0.3"/>
+  <circle cx="700" cy="80" r="1.5" fill="#00ff88" opacity="0.2"/>
+  <circle cx="650" cy="320" r="1" fill="#00ff88" opacity="0.15"/>
+  <circle cx="150" cy="120" r="1" fill="#00ff88" opacity="0.25"/>
+
+  <text x="400" y="380" font-family="Consolas, monospace" font-size="8" fill="#00ff88" fill-opacity="0.2" text-anchor="middle">azota-god-mode · Tampermonkey Userscript</text>
+</svg>
