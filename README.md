@@ -1056,6 +1056,15 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
+### ⭐ ỦNG HỘ DỰ ÁN
+
+Nếu bạn thấy script này hữu ích, hãy **star** repo trên GitHub để ủng hộ nhé! 🌟
+
+Mọi góp ý, báo lỗi, hoặc đề xuất cải tiến, xin vui lòng liên hệ qua email:
+**📧 skappafrost@gmail.com**
+
+---
+
 <p align="center">
   <sub>Made with ⚡ for Vietnamese students · Use responsibly · Not responsible for misuse</sub>
 </p>
