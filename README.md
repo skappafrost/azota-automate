@@ -4,12 +4,69 @@
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-✓-yellow?style=flat-square)]()
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-> **A powerful Tampermonkey userscript for automating online exams on [azota.vn](https://azota.vn).**  
-> Includes an intelligent Auto Pilot system, memory-based answer recall, quick-fill tools, support for True/False and Essay questions, result page analysis, and a sleek cyberpunk dark UI.
+---
+
+## 🇻🇳 TIẾNG VIỆT
+
+> **Trình script Tampermonkey tự động hoá bài kiểm tra trực tuyến trên [azota.vn](https://azota.vn).**  
+> Bao gồm Auto Pilot thông minh, hệ thống ghi nhớ đáp án, công cụ điền nhanh, hỗ trợ Đúng/Sai và Tự luận, phân tích trang kết quả, và giao diện cyberpunk tối giản.
 
 ---
 
-## 📋 Table of Contents
+### ⚠️ TUYÊN BỐ MIỄN TRỪ TRÁCH NHIỆM PHÁP LÝ (QUAN TRỌNG)
+
+**BẰNG VIỆC SỬ DỤNG SCRIPT NÀY, BẠN ĐỒNG Ý VỚI TẤT CẢ CÁC ĐIỀU KHOẢN SAU ĐÂY. NẾU BẠN KHÔNG ĐỒNG Ý, KHÔNG ĐƯỢC SỬ DỤNG SCRIPT.**
+
+1. **MỤC ĐÍCH GIÁO DỤC**: Script này được tạo ra **CHỈ VÌ MỤC ĐÍCH GIÁO DỤC VÀ NGHIÊN CỨU BẢO MẬT**. Nó là công cụ để sinh viên tìm hiểu về cách thức hoạt động của các nền tảng thi trực tuyến, kiến thức về DOM manipulation, tự động hoá trình duyệt, và các khái niệm bảo mật web.
+
+2. **YÊU CẦU SỰ CHO PHÉP**: Script này **CHỈ ĐƯỢC PHÉP SỬ DỤNG** trên các bài kiểm tra mà bạn đã được giáo viên/giảng viên cho phép sử dụng công cụ hỗ trợ, hoặc trên các bài kiểm tra thực hành/ôn tập không tính điểm. **BẠN PHẢI CÓ SỰ CHO PHÉP RÕ RÀNG TỪ GIÁO VIÊN TRƯỚC KHI SỬ DỤNG.**
+
+3. **MIỄN TRỪ TRÁCH NHIỆM CỦA TÁC GIẢ**: Tác giả (**@skappafrost**) và tất cả những người đóng góp cho dự án này **KHÔNG CHỊU BẤT KỲ TRÁCH NHIỆM PHÁP LÝ NÀO** phát sinh từ việc sử dụng script này, bao gồm nhưng không giới hạn ở:
+   - Vi phạm quy chế thi, quy định nhà trường, hoặc quy định pháp luật
+   - Bị điểm kém, bị đình chỉ, bị buộc thôi học, hoặc bất kỳ hình thức kỷ luật nào
+   - Thiệt hại về học tập, học vị, học hàm, hoặc cơ hội nghề nghiệp
+   - Bất kỳ tổn thất trực tiếp, gián tiếp, ngẫu nhiên, hoặc do hậu quả nào
+
+4. **TRÁCH NHIỆM CỦA NGƯỜI DÙNG**: Bạn **HOÀN TOÀN CHỊU TRÁCH NHIỆM** về:
+   - Việc đảm bảo bạn có quyền sử dụng script này trên bài kiểm tra cụ thể đó
+   - Mọi hậu quả học tập, kỷ luật, hoặc pháp lý phát sinh từ việc sử dụng
+   - Việc tuân thủ tất cả quy định của trường học, địa phương, và quốc gia
+
+5. **KHÔNG CÓ BẢO HÀNH**: Script này được cung cấp "NGUYÊN TRẠNG" (AS IS), không có bất kỳ bảo hành nào, dù là rõ ràng hay ngụ ý. Tác giả không đảm bảo script sẽ hoạt động không có lỗi, không bị gián đoạn, hoặc phù hợp với mục đích sử dụng cụ thể của bạn.
+
+6. **SCRIPT CHẠY HOÀN TOÀN TRÊN TRÌNH DUYỆT**: Script này **KHÔNG** can thiệp vào máy chủ của azota.vn, **KHÔNG** hack cơ sở dữ liệu, **KHÔNG** vượt qua xác thực, **KHÔNG** thu thập thông tin cá nhân, và **KHÔNG** gửi dữ liệu ra ngoài trình duyệt của bạn. Toàn bộ dữ liệu được lưu trữ trong **localStorage** của trình duyệt và không bao giờ được truyền qua mạng.
+
+7. **CHỈ SỬ DỤNG CHO MỤC ĐÍCH KIỂM TRA BẢO MẬT**: Script này được tạo ra như một phần của nghiên cứu bảo mật (security research) để kiểm tra khả năng bảo vệ của các nền tảng thi trực tuyến. Bạn chỉ nên sử dụng trên các hệ thống mà bạn đã được cấp quyền kiểm tra bảo mật.
+
+---
+
+### 🧠 TÍNH NĂNG SẮP RA MẮT — AUTO-LEARNING 100%
+
+**Đang phát triển phiên bản mới** với tính năng **Tự động tìm đáp án đúng** thông qua cơ chế:
+
+> 🔄 **Làm bài không giới hạn** (unlimited retry) → 🧠 **Xây dựng bộ nhớ tích luỹ** → ✅ **Giải quyết 100% bài kiểm tra sau một khoảng thời gian**
+
+Cách hoạt động:
+1. Script sẽ tự động làm lại bài kiểm tra nhiều lần (nếu nền tảng cho phép làm lại không giới hạn)
+2. Sau mỗi lần, script thu thập đáp án từ trang kết quả
+3. Bộ nhớ tích luỹ dần dần tất cả các câu hỏi
+4. Khi đã đủ dữ liệu, script có thể hoàn thành bài kiểm tra với **điểm số 100%**
+
+**Trạng thái**: Đang trong giai đoạn phát triển — sẽ được phát hành trong phiên bản tương lai.
+
+---
+
+### ✨ Tổng quan
+
+**Azota God Mode** là script Tampermonkey giúp tự động hoá bài kiểm tra trên azota.vn. Cung cấp:
+
+- **Auto Pilot**: Tự động điền và nộp bài với cài đặt thời gian linh hoạt
+- **Hệ thống ghi nhớ**: Học đáp án từ trang kết quả, tự động điền lại sau
+- **Điền nhanh**: Chọn đáp án một chạm (A/B/C/D, Đúng/Sai, hoặc ngẫu nhiên)
+- **Trích xuất đáp án**: Lấy đáp án đúng từ bài kiểm tra đã hoàn thành
+- **Đồng bộ dữ liệu**: Xuất/nhập cơ sở dữ liệu đáp án qua file JSON
+
+### 📋 Mục lục (English)
 
 - [Overview](#-overview)
 - [Features](#-features)
@@ -30,6 +87,56 @@
 - [Contributing](#-contributing)
 - [Credits](#-credits)
 - [License](#-license)
+
+---
+
+## 🇬🇧 ENGLISH
+
+> **A powerful Tampermonkey userscript for automating online exams on [azota.vn](https://azota.vn).**  
+> Includes an intelligent Auto Pilot system, memory-based answer recall, quick-fill tools, support for True/False and Essay questions, result page analysis, and a sleek cyberpunk dark UI.
+
+---
+
+### ⚠️ LEGAL DISCLAIMER (IMPORTANT)
+
+**BY USING THIS SCRIPT, YOU AGREE TO ALL OF THE FOLLOWING TERMS. IF YOU DO NOT AGREE, DO NOT USE THE SCRIPT.**
+
+1. **EDUCATIONAL PURPOSE ONLY**: This script is created **SOLELY FOR EDUCATIONAL AND SECURITY RESEARCH PURPOSES**. It is a tool for students to learn about how online exam platforms work, DOM manipulation, browser automation, and web security concepts.
+
+2. **PERMISSION REQUIRED**: This script **MAY ONLY BE USED** on exams where you have been explicitly granted permission by your teacher/instructor to use assistive tools, or on practice/review exams that do not count toward your grade. **YOU MUST HAVE CLEAR PERMISSION FROM YOUR TEACHER BEFORE USE.**
+
+3. **NO LIABILITY**: The author (**@skappafrost**) and all contributors to this project **ASSUME NO LIABILITY WHATSOEVER** arising from the use of this script, including but not limited to:
+   - Violation of exam rules, school policies, or applicable laws
+   - Academic penalties, suspension, expulsion, or any form of disciplinary action
+   - Loss of academic credit, degree, or professional opportunities
+   - Any direct, indirect, incidental, or consequential damages
+
+4. **USER RESPONSIBILITY**: You **ASSUME FULL RESPONSIBILITY** for:
+   - Ensuring you have the right to use this script on the specific exam
+   - Any and all academic, disciplinary, or legal consequences
+   - Compliance with all applicable school, local, and national regulations
+
+5. **NO WARRANTY**: This script is provided "AS IS" without any warranty, express or implied. The author does not guarantee that the script will be error-free, uninterrupted, or fit for any particular purpose.
+
+6. **CLIENT-SIDE ONLY**: This script **DOES NOT** interfere with azota.vn servers, **DOES NOT** hack databases, **DOES NOT** bypass authentication, **DOES NOT** collect personal information, and **DOES NOT** transmit data outside your browser. All data is stored in your browser's **localStorage** and is never transmitted over the network.
+
+7. **SECURITY TESTING ONLY**: This script was created as part of security research to test the protection mechanisms of online exam platforms. You should only use it on systems for which you have been explicitly granted security testing authorization.
+
+---
+
+### 🧠 UPCOMING FEATURE — AUTO-LEARNING 100%
+
+**Next version in development** with the ability to **automatically discover all correct answers** through:
+
+> 🔄 **Unlimited retry** → 🧠 **Build cumulative memory** → ✅ **Solve 100% of the exam over time**
+
+How it works:
+1. The script will automatically re-take the exam multiple times (if the platform allows unlimited retries)
+2. After each attempt, it collects answers from the result page
+3. Memory accumulates all questions and answers over time
+4. When enough data is collected, the script can achieve **100% accuracy**
+
+**Status**: Under development — will be released in a future version.
 
 ---
 
@@ -445,7 +552,7 @@ This handles minor formatting differences, extra whitespace, and partial text ma
 
 ### Is this cheating?
 
-This script is a **productivity tool**. When used to auto-fill answers you already know (from studying or previous attempts), it saves time. Using it to bypass learning is not the intended use case.
+This script is a **productivity tool**. When used to auto-fill answers you already know (from studying or previous attempts), it saves time. Using it to bypass learning is not the intended use case. **You are responsible for ensuring you have permission to use this tool.**
 
 ### Will my answers be saved across devices?
 
@@ -453,7 +560,7 @@ No — localStorage is browser-specific. Use the **Export/Import** feature to tr
 
 ### Can I use this on a school computer?
 
-If the school computer has Tampermonkey installed, yes. If Tampermonkey is blocked, you cannot install it without administrator permissions.
+If the school computer has Tampermonkey installed, yes. If Tampermonkey is blocked, you cannot install it without administrator permissions. **You are responsible for following your school's computer use policy.**
 
 ### Does this work with Greasemonkey?
 
@@ -529,5 +636,5 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ---
 
 <p align="center">
-  <sub>Made with ⚡ for Vietnamese students · Use responsibly</sub>
+  <sub>Made with ⚡ for Vietnamese students · Use responsibly · Not responsible for misuse</sub>
 </p>
