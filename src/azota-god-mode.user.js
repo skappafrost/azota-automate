@@ -84,10 +84,14 @@
         }
         .sk-btn:active { transform: scale(0.95); }
 
-        .sk-btn-gold { border-color: rgba(255, 170, 0, 0.3); color: #ffaa00; background: rgba(255, 170, 0, 0.03); }
-        .sk-btn-gold:hover { background: rgba(255, 170, 0, 0.15); border-color: rgba(255, 170, 0, 0.6); box-shadow: 0 0 18px rgba(255, 170, 0, 0.12); }
+        .sk-btn-orange { border-color: rgba(255, 170, 0, 0.3); color: #ffaa00; background: rgba(255, 170, 0, 0.03); }
+        .sk-btn-orange:hover { background: rgba(255, 170, 0, 0.15); border-color: rgba(255, 170, 0, 0.6); box-shadow: 0 0 18px rgba(255, 170, 0, 0.12); }
 
+        .sk-btn-red { border-color: rgba(255, 68, 68, 0.3); color: #ff5555; background: rgba(255, 68, 68, 0.03); }
+        .sk-btn-red:hover { background: rgba(255, 68, 68, 0.15); border-color: rgba(255, 68, 68, 0.6); color: #fff; box-shadow: 0 0 18px rgba(255, 68, 68, 0.15); }
 
+        .sk-btn-blue { border-color: rgba(0, 170, 255, 0.3); color: #44bbff; background: rgba(0, 170, 255, 0.03); }
+        .sk-btn-blue:hover { background: rgba(0, 170, 255, 0.15); border-color: rgba(0, 170, 255, 0.6); box-shadow: 0 0 18px rgba(0, 170, 255, 0.12); }
 
         .sk-btn-cyan { border-color: rgba(0, 204, 255, 0.3); color: #44ddff; background: rgba(0, 204, 255, 0.03); }
         .sk-btn-cyan:hover { background: rgba(0, 204, 255, 0.15); border-color: rgba(0, 204, 255, 0.6); box-shadow: 0 0 18px rgba(0, 204, 255, 0.12); }
@@ -361,8 +365,8 @@
 
         <span class="sk-section">Memory</span>
         <div class="sk-grid">
-            <button class="sk-btn sk-btn-gold" id="learnBtn">🧠 LEARN</button>
-            <button class="sk-btn sk-btn-gold" id="reviewBtn">🎯 REVIEW</button>
+            <button class="sk-btn sk-btn-orange" id="learnBtn">🧠 LEARN</button>
+            <button class="sk-btn sk-btn-orange" id="reviewBtn">🎯 REVIEW</button>
         </div>
         <div class="sk-grid">
             <button class="sk-btn sk-btn-blue" id="exportBtn">⬇ EXPORT</button>
@@ -390,7 +394,7 @@
             <button class="sk-btn sk-btn-cyan" onclick="window.skFillTF('dung')">✓ DUNG</button>
             <button class="sk-btn sk-btn-red" onclick="window.skFillTF('sai')">✗ SAI</button>
             <button class="sk-btn sk-btn-blue" onclick="window.skFillTFPtn()">TF PTN</button>
-            <button class="sk-btn sk-btn-gold" onclick="window.skEssayDraft()">ESSAY</button>
+            <button class="sk-btn sk-btn-orange" onclick="window.skEssayDraft()">ESSAY</button>
         </div>
 
         <span class="sk-section">Pattern</span>
@@ -486,11 +490,883 @@
     // Helper: extract answer content from an .answer div (result page)
     function extractAnswerContent(aDiv) {
         const hook = aDiv.querySelector('azt-dynamic-hook');
-        
+        if (hook) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = '<azt-dynamic-hook>' + hook.innerHTML + '</azt-dynamic-hook>';
+            return getContent(wrapper);
+        }
+        const clone = aDiv.cloneNode(true);
+        const lbl = clone.querySelector('.answer-label');
+        if (lbl) lbl.remove();
+        return getContent(clone);
+    }
 
-... [OUTPUT TRUNCATED - 42570 chars omitted out of 92570 total] ...
+    window.skLearnFromResult = function () {
+        const db = getDB();
+        const rawBoxes = [...document.querySelectorAll('.question-standalone-box, .question-standalone-content-box')];
+        const seenIds = new Set();
+        const questionBoxes = rawBoxes.filter(box => {
+            const qid = resolveQid(box);
+            if (qid && seenIds.has(qid)) return false;
+            if (qid) seenIds.add(qid);
+            return true;
+        });
+        let count = 0;
 
-s[qKey] = totalCount;
+        questionBoxes.forEach(qBox => {
+            const key = getQuestionKey(qBox);
+            if (!key) return;
+
+            const allKeyTexts = [...qBox.querySelectorAll('.keyText')];
+
+            // --- Đúng/Sai detection ---
+            for (let kt of allKeyTexts) {
+                if (kt.textContent.includes('Đáp án đúng')) {
+                    const lalas = kt.querySelectorAll('.lalala');
+                    if (lalas.length > 0) {
+                        lalas.forEach(lala => {
+                            const m = lala.textContent.trim().match(/^([a-dA-D])\s*\)\s*(.+)$/);
+                            if (m) {
+                                const letter = m[1].toLowerCase();
+                                const answer = m[2].trim();
+                                if (answer === 'Đúng' || answer === 'Sai') {
+                                    db[`${key}_${letter}`] = answer;
+                                    count++;
+                                }
+                            }
+                        });
+                        return;
+                    }
+                }
+            }
+
+            // --- Tự luận detection ---
+            let essayAnswer = null;
+
+            // Helper: extract bracketed content from a node's textContent or from
+            // its child spans (commonly span.text-danger). Returns cleaned string
+            // or null.
+            function extractFromNode(node) {
+                if (!node) return null;
+                const txt = (node.textContent || '').trim();
+                // Prefer explicit bracketed form: [ ... ]
+                const bracket = txt.match(/\[\s*([^\]]+)\s*\]/);
+                if (bracket && bracket[1]) {
+                    return bracket[1].trim();
+                }
+
+                // Otherwise, try to join child spans that often contain each char
+                const spans = node.querySelectorAll && node.querySelectorAll('span.text-danger');
+                if (spans && spans.length > 0) {
+                    let built = Array.from(spans).map(s => s.textContent || '').join('');
+                    built = built.replace(/\[|\]/g, '').trim();
+                    // keep if contains a digit and not just the word 'nhập'
+                    if (built && /\d/.test(built) && !built.toLowerCase().includes('nhập')) return built;
+                }
+
+                return null;
+            }
+
+            // 1) If there's an explicit "Đáp án được chấp nhận" marker, look
+            // for bracketed content near it (same or following .keyText nodes).
+            for (let i = 0; i < allKeyTexts.length && !essayAnswer; i++) {
+                const kt = allKeyTexts[i];
+                const text = (kt.textContent || '');
+                if (text.includes('Đáp án được chấp nhận')) {
+                    // try the same node
+                    essayAnswer = extractFromNode(kt);
+                    if (essayAnswer) break;
+
+                    // try subsequent .keyText nodes which commonly hold the bracket
+                    for (let j = i + 1; j < allKeyTexts.length; j++) {
+                        essayAnswer = extractFromNode(allKeyTexts[j]);
+                        if (essayAnswer) break;
+                    }
+                    break;
+                }
+            }
+
+            // 2) Fallback: scan all .keyText nodes for bracketed content or
+            // text-danger spans (preferred over student's answer area).
+            if (!essayAnswer) {
+                for (let kt of allKeyTexts) {
+                    essayAnswer = extractFromNode(kt);
+                    if (essayAnswer) break;
+                }
+            }
+
+            // 3) Final fallback: sometimes accepted answer is rendered outside
+            // .keyText (rare) — try to look for any .answer-box .keyText-like
+            // patterns or explicit .text-danger sequences under the qBox.
+            if (!essayAnswer) {
+                const anyDanger = qBox.querySelectorAll('span.text-danger');
+                if (anyDanger && anyDanger.length > 0) {
+                    // try to build a candidate from contiguous text-danger spans
+                    let built = Array.from(anyDanger).map(s => s.textContent || '').join('');
+                    built = built.replace(/\[|\]/g, '').trim();
+                    if (built && /\d/.test(built) && !built.toLowerCase().includes('nhập')) {
+                        essayAnswer = built;
+                    }
+                }
+            }
+
+            if (essayAnswer !== null) {
+                db[key] = essayAnswer;
+                count++;
+                return;
+            }
+
+            // --- Multiple choice (existing logic) ---
+            if (!key || /^\d+$/.test(key) === false) return;
+
+            const correctAnswerSpan = qBox.querySelector('.keyText');
+            if (!correctAnswerSpan) return;
+
+            const matchResult = correctAnswerSpan.textContent.match(/Đáp án đúng:\s*([A-D])/);
+            if (!matchResult) return;
+            const correctLetter = matchResult[1];
+
+            const answerDivs = qBox.querySelectorAll('.answer');
+            let correctAnswerContent = null;
+
+            answerDivs.forEach(aDiv => {
+                const label = aDiv.querySelector('.answer-label');
+                if (!label) return;
+                const labelText = label.textContent.trim();
+                if (!labelText.startsWith(correctLetter + '.') &&
+                    labelText.replace('.', '').trim() !== correctLetter) return;
+
+                correctAnswerContent = extractAnswerContent(aDiv);
+            });
+
+            if (!correctAnswerContent) return;
+
+            db[key] = normalize(correctAnswerContent);
+            count++;
+        });
+
+        saveDB(db);
+        updateStatus(`Learned ${count} answers from result page!`);
+    };
+
+    window.skReview = function () {
+        if (isResultPage()) {
+            return window.skReviewOnResult();
+        }
+
+        const db = getDB();
+        const qs = getQuestions();
+        let matched = 0;
+
+        qs.forEach(q => {
+            const type = detectQuestionType(q);
+
+            if (type === 'truefalse') {
+                const subItems = q.querySelectorAll('.item-answer');
+                subItems.forEach(item => {
+                    const subPart = getSubPart(item);
+                    if (!subPart) return;
+                    const baseKey = getQuestionKey(q);
+                    const itemKey = `${baseKey}_${subPart}`;
+                    const saved = db[itemKey];
+                    if (!saved) return;
+
+                    const btns = item.querySelectorAll('button');
+                    for (let btn of btns) {
+                        const txt = btn.querySelector('.text-xs')?.textContent?.trim();
+                        if (txt === saved) {
+                            if (!btn.classList.contains('selected-answer')) {
+                                robustClick(btn);
+                            }
+                            matched++;
+                            break;
+                        }
+                    }
+                });
+                return;
+            }
+
+            if (type === 'essay') {
+                const key = getQuestionKey(q);
+                const saved = db[key];
+                if (!saved) return;
+
+                const textarea = q.querySelector('textarea');
+                if (textarea) {
+                    if (textarea.value !== saved) {
+                        textarea.value = saved;
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    matched++;
+                }
+                return;
+            }
+
+            const key = getQuestionKey(q);
+            const saved = db[key];
+            if (!saved) return;
+
+            const options = [...q.querySelectorAll('.item-answer, .answer-item, li')];
+            const best = findBest(options, saved);
+
+            if (best) {
+                if (!best.style.backgroundColor.includes('rgba(0, 255, 136')) {
+                    robustClick(best);
+                    best.style.backgroundColor = 'rgba(0,255,136,0.25)';
+                }
+                matched++;
+            }
+        });
+
+        updateStatus(`Auto-filled ${matched} matches!`);
+        return matched;
+    };
+
+    window.skReviewOnResult = function () {
+        const db = getDB();
+        const questionBoxes = [...document.querySelectorAll('.question-standalone-box, .question-standalone-content-box')];
+        let matched = 0;
+
+        questionBoxes.forEach(qBox => {
+            const key = getQuestionKey(qBox);
+            if (!key) return;
+
+            // Check if this is a TF question by looking for saved sub-keys
+            const tfKeys = Object.keys(db).filter(k => k.startsWith(key + '_') && /^[a-d]$/.test(k.split('_').pop()));
+            if (tfKeys.length > 0) {
+                const allKeyTexts = qBox.querySelectorAll('.keyText');
+                for (let kt of allKeyTexts) {
+                    if (kt.textContent.includes('Thí sinh chọn')) {
+                        const lalas = kt.querySelectorAll('.lalala');
+                        lalas.forEach(lala => {
+                            const m = lala.textContent.trim().match(/^([a-dA-D])\s*\)\s*(.+)$/);
+                            if (m) {
+                                const letter = m[1].toLowerCase();
+                                const chosen = m[2].trim();
+                                const subKey = `${key}_${letter}`;
+                                const saved = db[subKey];
+                                if (saved && chosen === saved) {
+                                    lala.style.fontWeight = 'bold';
+                                    lala.style.textDecoration = 'underline';
+                                    matched++;
+                                }
+                            }
+                        });
+                        return;
+                    }
+                }
+                return;
+            }
+
+            const saved = db[key];
+            if (!saved) return;
+
+            const answerDivs = [...qBox.querySelectorAll('.answer')];
+            if (answerDivs.length === 0) return;
+
+            let best = null;
+            let bestScore = 0;
+
+            answerDivs.forEach(aDiv => {
+                const txt = extractAnswerContent(aDiv);
+                let score = 0;
+                if (normalize(txt) === saved) score = 100;
+                else if (match(txt, saved)) score = 70;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = aDiv;
+                }
+            });
+
+            if (best) {
+                if (!best.style.backgroundColor.includes('rgba(0, 255, 136')) {
+                    best.style.backgroundColor = 'rgba(0,255,136,0.25)';
+                    best.style.borderRadius = '6px';
+                }
+                matched++;
+            }
+        });
+
+        updateStatus(`Highlighted ${matched} correct answers!`);
+        return matched;
+    };
+
+    // --- Hệ thống Auto Pilot ---
+    window.togglePilot = function() {
+        if (isResultPage()) {
+            updateStatus("Pilot not available on result page!");
+            return;
+        }
+
+        const btn = document.getElementById('pilotBtn');
+        const container = document.getElementById('skappa-menu');
+
+        // If pilot is running, stop it. Save resume state if percent-target.
+        if (pilotInterval) {
+            if (skPilotState && skPilotState.percentProvided) {
+                const elapsed = Date.now() - (skPilotState.startTime || Date.now());
+                const remaining = Math.max(0, skPilotState.totalMs - elapsed);
+                savedPilotResume = {
+                    remainingMs: remaining,
+                    percentProvided: true,
+                    percent: skPilotState.percent,
+                    autoSubmit: skPilotState.autoSubmit,
+                    tfFormula: skPilotState.tfFormula
+                };
+            }
+            clearInterval(pilotInterval);
+            pilotInterval = null;
+            skPilotState = null;
+            btn.innerText = "▶ PILOT";
+            btn.classList.remove('active');
+            container.classList.remove('pilot-active');
+            updateStatus(savedPilotResume ? "Pilot Paused. Resume available." : "Pilot Stopped.");
+            return;
+        }
+
+        // Start pilot
+        btn.innerText = "■ PILOT";
+        btn.classList.add('active');
+        container.classList.add('pilot-active');
+        updateStatus("Pilot searching questions...");
+
+        // Read composite input and parse (or use saved resume state)
+        let totalMs, percentProvided, percentValue, autoSubmit, tfFormula;
+        if (savedPilotResume) {
+            totalMs = savedPilotResume.remainingMs;
+            percentProvided = savedPilotResume.percentProvided;
+            percentValue = savedPilotResume.percent;
+            autoSubmit = savedPilotResume.autoSubmit;
+            tfFormula = savedPilotResume.tfFormula;
+        } else {
+            const raw = (document.getElementById('pilot-time')?.value || '').trim();
+            const parsed = parsePilotInput(raw);
+            totalMs = parsed.totalMs;
+            percentProvided = parsed.percentProvided;
+            percentValue = parsed.percent;
+            autoSubmit = parsed.autoSubmit;
+            tfFormula = parsed.tfFormula;
+        }
+
+        const MIN_INTERVAL = 20;
+        const db = getDB();
+
+        // Build sub-item level pool
+        // Each item = { key, questionKey, subPart, pointValue, type }
+        const qs = getQuestions();
+        const itemsPool = [];
+        const seenKeys = new Set();
+        qs.forEach(q => {
+            const qKey = getQuestionKey(q);
+            if (!qKey) return;
+            if (seenKeys.has(qKey)) return;
+            seenKeys.add(qKey);
+            const type = detectQuestionType(q);
+
+            if (type === 'truefalse') {
+                const subItems = q.querySelectorAll('.item-answer');
+                subItems.forEach(item => {
+                    const subPart = getSubPart(item);
+                    if (!subPart) return;
+                    const itemKey = `${qKey}_${subPart}`;
+                    if (!db[itemKey]) return;
+                    itemsPool.push({ key: itemKey, questionKey: qKey, subPart, pointValue: 1, type: 'truefalse' });
+                });
+            } else {
+                if (type === 'essay') {
+                    if (!db[qKey]) return;
+                }
+                itemsPool.push({ key: qKey, questionKey: qKey, subPart: null, pointValue: 1, type });
+            }
+        });
+
+        if (itemsPool.length === 0 && totalMs > 0) {
+            updateStatus('No answerable questions found.');
+            btn.innerText = "▶ PILOT";
+            btn.classList.remove('active');
+            container.classList.remove('pilot-active');
+            return;
+        }
+
+        const totalPoints = itemsPool.reduce((s, it) => s + it.pointValue, 0);
+        const perItem = totalMs > 0 ? Math.max(Math.floor(totalMs / itemsPool.length), MIN_INTERVAL) : MIN_INTERVAL;
+
+        // Both paths use iterative flipping with calculateScore
+
+        skPilotState = {
+            totalMs,
+            itemsPool,
+            totalPoints,
+            perItem,
+            percentProvided: !!percentProvided,
+            percent: percentValue,
+            autoSubmit: !!autoSubmit,
+            tfFormula: tfFormula || [0.25, 0.5, 0.75, 1],
+            startTime: Date.now()
+        };
+
+        savedPilotResume = null;
+        updateStatus(`Pilot: ${itemsPool.length} items, ${perItem}ms/item${percentProvided ? `, target ${percentValue}%` : ''}${autoSubmit ? ', auto-submit' : ''}`);
+
+        // Process a single item (returns true if state changed)
+        function processItem(item) {
+            const q = findQuestionElementByKey(item.questionKey);
+            if (!q) return false;
+            const shouldBeCorrect = skPilotState.fillCorrect ? skPilotState.fillCorrect.has(item.key) : true;
+
+            if (item.type === 'truefalse') {
+                const subItems = q.querySelectorAll('.item-answer');
+                let targetItem = null;
+                subItems.forEach(si => { if (getSubPart(si) === item.subPart) targetItem = si; });
+                if (!targetItem) return false;
+                const saved = db[item.key];
+                const selectedBtn = targetItem.querySelector('.selected-answer') || targetItem.querySelector('.border-selected-answer') || targetItem.querySelector('.selected') || targetItem.querySelector('button[aria-pressed="true"]');
+                const currentTxt = selectedBtn ? (selectedBtn.querySelector('.text-xs')?.textContent || selectedBtn.textContent || '').trim() : '';
+                const isCurrentlyCorrect = currentTxt === saved;
+
+                if (shouldBeCorrect && !isCurrentlyCorrect) {
+                    for (let b of targetItem.querySelectorAll('button')) {
+                        const txt = b.querySelector('.text-xs')?.textContent?.trim();
+                        if (txt === saved) { robustClick(b); return true; }
+                    }
+                } else if (!shouldBeCorrect && (!selectedBtn || isCurrentlyCorrect)) {
+                    for (let b of targetItem.querySelectorAll('button')) {
+                        const txt = b.querySelector('.text-xs')?.textContent?.trim();
+                        if (txt && txt !== saved) { robustClick(b); return true; }
+                    }
+                }
+                return false;
+            }
+
+            if (item.type === 'essay') {
+                const textarea = q.querySelector('textarea');
+                if (!textarea) return false;
+                const saved = db[item.key];
+                if (!saved) return false;
+                const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+
+                if (shouldBeCorrect) {
+                    if (textarea.value !== saved) {
+                        nativeSetter.call(textarea, saved);
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                        return true;
+                    }
+                } else {
+                    const trimmed = saved.trim();
+                    const num = parseFloat(trimmed);
+                    const isNumber = !isNaN(num) && isFinite(num) && !/[a-df-zA-DF-Z]/.test(trimmed);
+                    let wrongAnswer = '';
+                    if (isNumber) {
+                        const smallOffset = 0.1 + Math.random() * 2.3;
+                        if (Math.random() > 0.5) {
+                            wrongAnswer = num * -1;
+                            if (wrongAnswer === num) wrongAnswer = num + (Math.random() > 0.5 ? smallOffset : -smallOffset);
+                        } else {
+                            wrongAnswer = num + (Math.random() > 0.5 ? smallOffset : -smallOffset);
+                        }
+                        wrongAnswer = String(Math.round(wrongAnswer * 100) / 100);
+                    }
+                    if (textarea.value !== wrongAnswer) {
+                        nativeSetter.call(textarea, wrongAnswer);
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Multiple choice
+            if (shouldBeCorrect) {
+                if (!isQuestionDoneCorrectly(q)) { applySavedToQuestion(q); return true; }
+            } else {
+                const saved = db[item.key];
+                if (!saved) return false;
+                const selected = q.querySelector('.border-selected-answer')?.closest('.item-answer, .answer-item') || q.querySelector('.selected') || q.querySelector('.answer-item.selected') || q.querySelector('.item-answer.selected');
+                if (selected) {
+                    const targetEl = selected.querySelector('.answer-content') || selected;
+                    const curTxt = getContent(targetEl) || '';
+                    if (curTxt && !match(curTxt, saved) && normalize(curTxt) !== normalize(saved)) return false;
+                }
+                const options = Array.from(q.querySelectorAll('.item-answer, .answer-item, li'));
+                const pool = options.filter(opt => {
+                    const tEl = opt.querySelector('.answer-content') || opt;
+                    return normalize(getContent(tEl)) !== saved;
+                });
+                if (pool.length > 0) { robustClick(pool[Math.floor(Math.random() * pool.length)]); return true; }
+            }
+            return false;
+        }
+
+        // Calculate current score based on T/F formula
+        // Returns { score, total }
+        function calculateScore(tfFormula) {
+            const curDb = getDB();
+            const qs = getQuestions();
+            let score = 0;
+            let total = 0;
+            const seenKeys = new Set();
+
+            qs.forEach(q => {
+                const qKey = getQuestionKey(q);
+                if (!qKey || seenKeys.has(qKey)) return;
+                seenKeys.add(qKey);
+                const type = detectQuestionType(q);
+
+                if (type === 'truefalse') {
+                    const subItems = q.querySelectorAll('.item-answer');
+                    let correctCount = 0;
+                    let subTotal = 0;
+                    subItems.forEach(item => {
+                        const subPart = getSubPart(item);
+                        if (!subPart) return;
+                        const itemKey = `${qKey}_${subPart}`;
+                        const saved = curDb[itemKey];
+                        if (!saved) return;
+                        subTotal++;
+                        const selectedBtn = item.querySelector('.selected-answer') || item.querySelector('.border-selected-answer') || item.querySelector('.selected') || item.querySelector('button[aria-pressed="true"]');
+                        if (selectedBtn) {
+                            const txt = (selectedBtn.querySelector('.text-xs')?.textContent || selectedBtn.textContent || '').trim();
+                            if (txt === saved) correctCount++;
+                        }
+                    });
+                    // Look up formula for this many correct sub-items
+                    // tfFormula[0]=score for 1 correct, [1]=for 2 correct, etc.
+                    const formulaScore = (correctCount > 0 && correctCount <= tfFormula.length) ? tfFormula[correctCount - 1] : 0;
+                    score += formulaScore;
+                    // Max possible = last element of formula
+                    total += tfFormula[tfFormula.length - 1];
+                } else {
+                    // MC/essay: 1 point each
+                    const saved = curDb[qKey];
+                    if (!saved) return;
+                    total += 1;
+                    const selected = q.querySelector('.border-selected-answer')?.closest('.item-answer, .answer-item') || q.querySelector('.selected') || q.querySelector('.answer-item.selected') || q.querySelector('.item-answer.selected');
+                    if (selected) {
+                        const targetEl = selected.querySelector('.answer-content') || selected;
+                        const curTxt = getContent(targetEl) || '';
+                        if (match(curTxt, saved) || normalize(curTxt) === normalize(saved)) score += 1;
+                    }
+                }
+            });
+            return { score, total };
+        }
+
+        // Find optimal set of flips to reach target score exactly
+        // Uses enumeration of all T/F state combinations + MC count
+        // tfQuestions = [{ qKey, subItemCount }] - actual sub-item count per question
+        // Returns { mcFlips: number, tfStates: { qKey: flipCount } }
+        function findOptimalFlips(tfQuestions, mcCount, totalScore, targetScore, formula) {
+            const maxReduction = totalScore - targetScore;
+            if (maxReduction <= 0) return { mcFlips: 0, tfStates: {} };
+
+            // Pre-compute T/F state reductions for each question
+            // State k = flip k sub-items (0 to subItemCount)
+            // Reduction = formula[subItemCount-1] - formula[subItemCount-1-k] (for k > 0)
+            const tfStates = tfQuestions.map(({ qKey, subItemCount }) => {
+                const maxIdx = Math.min(subItemCount, formula.length) - 1; // formula index for all correct
+                const oldPts = formula[maxIdx]; // all correct initially
+                const states = [];
+                for (let k = 0; k <= subItemCount; k++) {
+                    const newIdx = maxIdx - k;
+                    const newPts = (newIdx >= 0) ? formula[newIdx] : 0;
+                    states.push({ flipCount: k, reduction: oldPts - newPts });
+                }
+                return states;
+            });
+
+            // Enumerate all T/F state combinations
+            const n = tfQuestions.length;
+            let bestCombo = null;
+            let bestScore = -Infinity;
+            let bestTotalFlips = -1;
+
+            // Recursive enumeration
+            function enumerate(idx, tfReduction, tfStateMap) {
+                if (idx === n) {
+                    // Calculate MC needed - check BOTH floor and ceil for optimal result
+                    const remaining = maxReduction - tfReduction;
+                    const candidates = [Math.floor(remaining), Math.ceil(remaining)];
+
+                    for (const mcCandidate of candidates) {
+                        const mcNeeded = Math.max(0, Math.min(mcCandidate, mcCount));
+                        const finalScore = totalScore - tfReduction - mcNeeded;
+
+                        if (finalScore >= targetScore) {
+                            const totalFlips = mcNeeded + Object.values(tfStateMap).reduce((s, v) => s + v, 0);
+                            const dist = finalScore - targetScore;
+                            const bestDist = bestScore - targetScore;
+
+                            if (bestCombo === null ||
+                                dist < bestDist ||
+                                (dist === bestDist && totalFlips > bestTotalFlips)) {
+                                bestCombo = { mcFlips: mcNeeded, tfStates: { ...tfStateMap } };
+                                bestScore = finalScore;
+                                bestTotalFlips = totalFlips;
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                const qKey = tfQuestions[idx].qKey;
+                for (let k = 0; k <= tfQuestions[idx].subItemCount; k++) {
+                    const newReduction = tfReduction + tfStates[idx][k].reduction;
+                    if (newReduction > maxReduction + 0.001) continue; // prune
+                    tfStateMap[qKey] = k;
+                    enumerate(idx + 1, newReduction, tfStateMap);
+                }
+            }
+
+            enumerate(0, 0, {});
+            return bestCombo || { mcFlips: 0, tfStates: {} };
+        }
+
+        function pilotDone() {
+            clearInterval(pilotInterval);
+            pilotInterval = null;
+            btn.innerText = "▶ PILOT";
+            btn.classList.remove('active');
+            container.classList.remove('pilot-active');
+            if (skPilotState.autoSubmit) {
+                updateStatus('Pilot finished. Submitting...');
+                skPilotState = null;
+                window.skSubmit();
+            } else {
+                updateStatus('Pilot finished.');
+                skPilotState = null;
+            }
+        }
+
+        // Fast path: no time → use skReview to fill all correct, then flip wrong ones
+        if (totalMs <= 0) {
+            pilotInterval = setInterval(() => {
+                const fillCount = window.skReview();
+                if (fillCount > 0) {
+                    clearInterval(pilotInterval);
+                    pilotInterval = null;
+
+                    const formula = tfFormula || [0.25, 0.5, 0.75, 1];
+
+                    if (percentProvided) {
+                        const freshDb = getDB();
+                        const freshQs = getQuestions();
+                        const freshPool = [];
+                        const freshSeen = new Set();
+                        // Track T/F correct counts per question for internal score calculation
+                        const tfCorrectCounts = {}; // qKey -> number of correct sub-items
+                        const tfSubItemTotals = {}; // qKey -> total sub-items
+                        let mcCorrectCount = 0;
+                        let mcTotalCount = 0;
+
+                        freshQs.forEach(q => {
+                            const qKey = getQuestionKey(q);
+                            if (!qKey || freshSeen.has(qKey)) return;
+                            freshSeen.add(qKey);
+                            const type = detectQuestionType(q);
+                            if (type === 'truefalse') {
+                                let correctCount = 0;
+                                let totalCount = 0;
+                                q.querySelectorAll('.item-answer').forEach(item => {
+                                    const subPart = getSubPart(item);
+                                    if (!subPart) return;
+                                    const itemKey = `${qKey}_${subPart}`;
+                                    if (!freshDb[itemKey]) return;
+                                    totalCount++;
+                                    // Check if currently correct
+                                    const selectedBtn = item.querySelector('.selected-answer') || item.querySelector('.border-selected-answer') || item.querySelector('.selected') || item.querySelector('button[aria-pressed="true"]');
+                                    if (selectedBtn) {
+                                        const txt = (selectedBtn.querySelector('.text-xs')?.textContent || selectedBtn.textContent || '').trim();
+                                        if (txt === freshDb[itemKey]) correctCount++;
+                                    }
+                                    freshPool.push({ key: itemKey, questionKey: qKey, subPart, type: 'truefalse' });
+                                });
+                                tfCorrectCounts[qKey] = correctCount;
+                                tfSubItemTotals[qKey] = totalCount;
+                            } else {
+                                if (type === 'essay' && !freshDb[qKey]) return;
+                                mcTotalCount++;
+                                // Check if currently correct
+                                const selected = q.querySelector('.border-selected-answer')?.closest('.item-answer, .answer-item') || q.querySelector('.selected') || q.querySelector('.answer-item.selected') || q.querySelector('.item-answer.selected');
+                                if (selected) {
+                                    const targetEl = selected.querySelector('.answer-content') || selected;
+                                    const curTxt = getContent(targetEl) || '';
+                                    if (match(curTxt, freshDb[qKey]) || normalize(curTxt) === normalize(freshDb[qKey])) mcCorrectCount++;
+                                }
+                                freshPool.push({ key: qKey, questionKey: qKey, subPart: null, type });
+                            }
+                        });
+
+                        // Calculate initial score internally
+                        let currentScore = mcCorrectCount;
+                        for (const qKey in tfCorrectCounts) {
+                            const count = tfCorrectCounts[qKey];
+                            if (count > 0 && count <= formula.length) {
+                                currentScore += formula[count - 1];
+                            }
+                        }
+                        let totalPts = mcTotalCount;
+                        for (const qKey in tfSubItemTotals) {
+                            totalPts += formula[formula.length - 1];
+                        }
+                        const targetScore = (percentValue / 100) * totalPts;
+
+                        if (currentScore > targetScore) {
+                            // Use exact enumeration to find optimal flips
+                            const tfQuestionInfo = Object.keys(tfCorrectCounts).map(qKey => ({
+                                qKey,
+                                subItemCount: tfSubItemTotals[qKey] || 4
+                            }));
+                            const mcPoolCount = freshPool.filter(it => it.type !== 'truefalse').length;
+                            const optResult = findOptimalFlips(tfQuestionInfo, mcPoolCount, currentScore, targetScore, formula);
+
+                            // Build execution list: MC items + T/F sub-items
+                            const execList = [];
+
+                            // Add MC items to flip
+                            const mcItems = freshPool.filter(it => it.type !== 'truefalse');
+                            const mcShuffled = shuffleArray(mcItems.slice());
+                            for (let i = 0; i < optResult.mcFlips && i < mcShuffled.length; i++) {
+                                execList.push(mcShuffled[i]);
+                            }
+
+                            // Add T/F sub-items to flip
+                            for (const qKey in optResult.tfStates) {
+                                const flipCount = optResult.tfStates[qKey];
+                                if (flipCount <= 0) continue;
+                                const tfSubItems = freshPool.filter(it => it.type === 'truefalse' && it.questionKey === qKey);
+                                const tfShuffled = shuffleArray(tfSubItems.slice());
+                                for (let i = 0; i < flipCount && i < tfShuffled.length; i++) {
+                                    execList.push(tfShuffled[i]);
+                                }
+                            }
+
+                            // Shuffle for fairness (mix MC and T/F)
+                            const finalList = shuffleArray(execList);
+
+                            // Execute all flips
+                            for (const item of finalList) {
+                                const q = findQuestionElementByKey(item.questionKey);
+                                if (!q) continue;
+                                if (item.type === 'truefalse') {
+                                    q.querySelectorAll('.item-answer').forEach(si => {
+                                        if (getSubPart(si) !== item.subPart) return;
+                                        const saved = freshDb[item.key];
+                                        if (!saved) return;
+                                        for (let b of si.querySelectorAll('button')) {
+                                            const txt = b.querySelector('.text-xs')?.textContent?.trim();
+                                            if (txt && txt !== saved) { robustClick(b); break; }
+                                        }
+                                    });
+                                } else if (item.type === 'essay') {
+                                    const saved = freshDb[item.key];
+                                    if (!saved) continue;
+                                    const textarea = q.querySelector('textarea');
+                                    if (!textarea) continue;
+                                    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+                                    const trimmed = saved.trim();
+                                    const num = parseFloat(trimmed);
+                                    const isNumber = !isNaN(num) && isFinite(num) && !/[a-df-zA-DF-Z]/.test(trimmed);
+                                    let wrongAnswer = '';
+                                    if (isNumber) {
+                                        const smallOffset = 0.1 + Math.random() * 2.3;
+                                        if (Math.random() > 0.5) {
+                                            wrongAnswer = num * -1;
+                                            if (wrongAnswer === num) wrongAnswer = num + (Math.random() > 0.5 ? smallOffset : -smallOffset);
+                                        } else {
+                                            wrongAnswer = num + (Math.random() > 0.5 ? smallOffset : -smallOffset);
+                                        }
+                                        wrongAnswer = String(Math.round(wrongAnswer * 100) / 100);
+                                    }
+                                    nativeSetter.call(textarea, wrongAnswer);
+                                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                                    textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                                } else {
+                                    const saved = freshDb[item.key];
+                                    if (!saved) continue;
+                                    const options = Array.from(q.querySelectorAll('.item-answer, .answer-item, li'));
+                                    const pool = options.filter(opt => {
+                                        const tEl = opt.querySelector('.answer-content') || opt;
+                                        return normalize(getContent(tEl)) !== saved;
+                                    });
+                                    if (pool.length > 0) robustClick(pool[Math.floor(Math.random() * pool.length)]);
+                                }
+                            }
+                        }
+                    }
+
+                    btn.innerText = "▶ PILOT";
+                    btn.classList.remove('active');
+                    container.classList.remove('pilot-active');
+                    if (autoSubmit) {
+                        updateStatus('Pilot finished. Submitting...');
+                        skPilotState = null;
+                        window.skSubmit();
+                    } else {
+                        updateStatus('Pilot finished.');
+                        skPilotState = null;
+                    }
+                }
+            }, 10);
+            return;
+        }
+
+        // Paced path: time limit → fill all, then flip items until score ≤ target
+        const formula = tfFormula || [0.25, 0.5, 0.75, 1];
+        let itemIdx = 0;
+        let phase = 0; // 0=fill all, 1=flip wrong
+        let flipTargets = [];
+        let internalScore = 0;
+        let internalTotal = 0;
+        let internalTarget = 0;
+        const internalTfCounts = {}; // qKey -> correct sub-item count
+        const internalTfTotals = {}; // qKey -> total sub-items
+
+        pilotInterval = setInterval(() => {
+            if (!skPilotState) { clearInterval(pilotInterval); pilotInterval = null; return; }
+
+            if (phase === 0) {
+                // Phase 0: fill all items
+                if (itemIdx >= skPilotState.itemsPool.length) {
+                    if (!percentProvided) {
+                        pilotDone();
+                        return;
+                    }
+                    // Calculate internal score and collect flip targets
+                    const curDb = getDB();
+                    const curQs = getQuestions();
+                    const seenKeys = new Set();
+                    let mcCorrect = 0;
+                    let mcTotal = 0;
+
+                    curQs.forEach(q => {
+                        const qKey = getQuestionKey(q);
+                        if (!qKey || seenKeys.has(qKey)) return;
+                        seenKeys.add(qKey);
+                        const type = detectQuestionType(q);
+                        if (type === 'truefalse') {
+                            let correctCount = 0;
+                            let totalCount = 0;
+                            q.querySelectorAll('.item-answer').forEach(item => {
+                                const subPart = getSubPart(item);
+                                if (!subPart) return;
+                                const itemKey = `${qKey}_${subPart}`;
+                                const saved = curDb[itemKey];
+                                if (!saved) return;
+                                totalCount++;
+                                const selectedBtn = item.querySelector('.selected-answer') || item.querySelector('.border-selected-answer') || item.querySelector('.selected') || item.querySelector('button[aria-pressed="true"]');
+                                if (selectedBtn) {
+                                    const txt = (selectedBtn.querySelector('.text-xs')?.textContent || selectedBtn.textContent || '').trim();
+                                    if (txt === saved) {
+                                        correctCount++;
+                                        flipTargets.push({ type: 'truefalse', element: item, questionKey: qKey, saved, key: itemKey });
+                                    }
+                                }
+                            });
+                            internalTfCounts[qKey] = correctCount;
+                            internalTfTotals[qKey] = totalCount;
                         } else {
                             mcTotal++;
                             const saved = curDb[qKey];
