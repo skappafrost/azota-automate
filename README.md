@@ -211,7 +211,17 @@ Script này yêu cầu trình duyệt có hỗ trợ cài extension. Các trình
 2. Mở Chrome Web Store ngay trong Kiwi Browser
 3. Cài Tampermonkey như trên Chrome
 
-#### Bước 1.3 — Kiểm tra Tampermonkey đã hoạt động
+> **⚠️ Lưu ý cho người mới cài Tampermonkey lần đầu:**
+> Sau khi cài Tampermonkey, script có thể **không hoạt động ngay** nếu bạn chưa bật đúng cấu hình.
+>
+> 1. Vào `chrome://extensions/` (hoặc `edge://extensions/` trên Edge)
+> 2. Tìm **Tampermonkey** trong danh sách
+> 3. Bật **"Allow user scripts"** (bắt buộc — nếu không bật, script sẽ không chạy)
+> 4. Bật **"Allow access to file URLs"** (tuỳ chọn — chỉ cần nếu bạn tải script từ file .user.js về máy)
+>
+> Sau khi bật xong, **refresh lại trang azota.vn** là script hoạt động.
+
+#### Bước 1.3 — Kiểm tra
 1. Bấm icon 🎭 trên toolbar
 2. Bạn sẽ thấy bảng điều khiển (Dashboard) với danh sách script đã cài
 3. Nếu là lần đầu, danh sách sẽ trống
