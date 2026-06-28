@@ -1,0 +1,34 @@
+# Node / npm
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Project specific
+*.log
+backups/
+*.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/

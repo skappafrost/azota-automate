@@ -1,0 +1,19 @@
+{
+  "name": "azota-god-mode",
+  "version": "15.3.0",
+  "description": "Tampermonkey userscript for automating online exams on azota.vn",
+  "main": "src/azota-god-mode.user.js",
+  "scripts": {
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+  "keywords": [
+    "azota",
+    "tampermonkey",
+    "userscript",
+    "exam-automation",
+    "vietnam-education"
+  ],
+  "author": "Skappa",
+  "license": "MIT"
+}
